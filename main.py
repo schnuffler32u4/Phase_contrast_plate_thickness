@@ -31,7 +31,36 @@ def fitfunction(theta, thickness, path, bg):
     return bg + np.sin(((1 - n) * thickness / np.cos(theta) + path) / wl)
 
 
-for file in os.listdir('data/one_plate'):
+thick = []
+thickerr = []
 
-    data = pd.read_csv('data/one_plate/' + file)
-    data.rename(columns=)
+for file in os.listdir('data/one_plate'):
+    if file[:4] != "data":
+        data = pd.read_csv('data/one_plate/' + file)
+    data.rename(columns={"Angle (rad) Run #1": "Angle", "Light Intensity, Ch 1 (lx) Run #1": "Light"}, inplace=True)
+    data.dropna(inplace=True)
+    angle = np.array(data.Angle)
+    angle[0] = 0
+    nans = []
+    for i in range(len(angle)):
+        if np.isnan(angle[i]) == False:
+            nans.append(i)
+
+    for j in range(len(nans) - 1):
+        angle[nans[j]:nans[j+1]] = np.linspace(angle[nans[j]], angle[nans[j+1]], len(angle[nans[j]:nans[j+1]]))
+    # print(angle)
+    popt, pcov = curve_fit(fitfunction, angle, data.Light, maxfev=50000, p0=[1e-3, 0, 48])
+
+    plt.plot(angle, data.Light, color='red')
+    cal = np.zeros(len(angle))
+
+    plt.plot(angle, fitfunction(angle, *popt), color='cyan')
+    plt.show()
+    # print(popt[0])
+    thick.append(popt[0])
+    thickerr.append(np.sqrt(pcov[0][0]))
+
+thick = np.array(thick)
+thickerr = np.array(thickerr)
+print(np.sum(thick / thickerr ** 2) / np.sum(1 / thickerr ** 2))
+print(np.sqrt(1 / np.sum(1 / thickerr ** 2)))
