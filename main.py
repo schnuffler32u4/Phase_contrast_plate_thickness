@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.optimize import curve_fit
 import os
+import statistics
 
 plt.style.use('extensys')
 
@@ -35,8 +36,10 @@ thick = []
 thickerr = []
 
 for file in os.listdir('data/one_plate'):
-    if file[:4] != "data":
+    # if file[:4] != "data":
+    if True:
         data = pd.read_csv('data/one_plate/' + file)
+    print(file)
     data.rename(columns={"Angle (rad) Run #1": "Angle", "Light Intensity, Ch 1 (lx) Run #1": "Light"}, inplace=True)
     data.dropna(inplace=True)
     angle = np.array(data.Angle)
@@ -49,13 +52,13 @@ for file in os.listdir('data/one_plate'):
     for j in range(len(nans) - 1):
         angle[nans[j]:nans[j+1]] = np.linspace(angle[nans[j]], angle[nans[j+1]], len(angle[nans[j]:nans[j+1]]))
     # print(angle)
-    popt, pcov = curve_fit(fitfunction, angle, data.Light, maxfev=50000, p0=[1e-3, 0, 48])
+    popt, pcov = curve_fit(fitfunction, angle, data.Light, maxfev=500000, p0=[1e-3, 0, statistics.median(data.Light)])
 
     plt.plot(angle, data.Light, color='red')
     cal = np.zeros(len(angle))
 
     plt.plot(angle, fitfunction(angle, *popt), color='cyan')
-    plt.show()
+    # plt.show()
     # print(popt[0])
     thick.append(popt[0])
     thickerr.append(np.sqrt(pcov[0][0]))
